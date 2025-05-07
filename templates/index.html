@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Treinamento LGPD - Conceitos Iniciais</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; }
+        .container { max-width: 600px; margin-top: 40px; }
+        .info-box { background: #e3f0fc; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+        .form-label { font-weight: 500; }
+    </style>
+</head>
+<body>
+<div class="container shadow bg-white p-4 rounded">
+    <h2 class="text-center mb-4">Inscrição - Treinamento LGPD</h2>
+    <div class="info-box">
+        <b>Informações do Treinamento:</b><br>
+        <span>📍 Local: Prédio da Fundação São Paulo – Auditório, 5º andar</span><br>
+        <span>⏰ Duração: 2 horas</span><br>
+        <span>👥 Limite: 30 participantes por turma</span>
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    <form method="post">
+        <div class="mb-2">
+            <label class="form-label">Nome Completo:</label>
+            <input type="text" class="form-control" name="name" required>
+        </div>
+        <div class="mb-2">
+            <label class="form-label">Email:</label>
+            <input type="email" class="form-control" name="email" required>
+        </div>
+        <div class="mb-2">
+            <label class="form-label">Setor:</label>
+            <input type="text" class="form-control" name="sector" required>
+        </div>
+        <div class="mb-2">
+            <label class="form-label">Gestor:</label>
+            <input type="text" class="form-control" name="manager" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Escolha a data do treinamento:</label>
+            <select class="form-select" name="date" required>
+                <option value="">Selecione uma data</option>
+                {% for date, full in date_status %}
+                    {% if full %}
+                        <option value="{{ date }}" disabled>{{ date }} (Lotada)</option>
+                    {% else %}
+                        <option value="{{ date }}">{{ date }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Inscrever-se</button>
+    </form>
+    <hr>
+    <button class="btn btn-success w-100 mt-2" data-bs-toggle="modal" data-bs-target="#senhaModal">
+        Baixar Cadastros
+    </button>
+
+    <!-- Modal para senha -->
+    <div class="modal fade" id="senhaModal" tabindex="-1" aria-labelledby="senhaModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <form id="baixarForm">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="senhaModalLabel">Digite a senha para baixar</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <input type="password" class="form-control" name="senha" id="senhaInput" placeholder="Senha" required>
+              <div id="senhaErro" class="text-danger mt-2" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-success">Baixar</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.getElementById('baixarForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const senha = document.getElementById('senhaInput').value;
+    const erroDiv = document.getElementById('senhaErro');
+    erroDiv.style.display = 'none';
+
+    const formData = new FormData();
+    formData.append('senha', senha);
+
+    const response = await fetch('/baixar', {
+        method: 'POST',
+        body: formData
+    });
+
+    if (response.status === 200) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "cadastros.xlsx";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        document.getElementById('senhaInput').value = '';
+        var modal = bootstrap.Modal.getInstance(document.getElementById('senhaModal'));
+        modal.hide();
+    } else {
+        const data = await response.json();
+        erroDiv.textContent = data.error;
+        erroDiv.style.display = 'block';
+    }
+};
+</script>
+</body>
+</html> 
